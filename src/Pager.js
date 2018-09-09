@@ -1,7 +1,8 @@
 import React from 'react'
 import styled from 'styled-components'
 import { Motion, spring } from 'react-motion'
-
+import matchPath from 'react-router-dom/matchPath'
+import { Route, Link } from 'react-router-dom'
 const springSettings = { stiffness: 170, damping: 26 }
 
 const ItemsWrapper = styled.div`
@@ -22,7 +23,7 @@ const ButtonRow = styled.div`
   margin-top: 20px;
 `
 
-const Button = styled.button`
+const Button = styled(Link)`
   outline: none;
   border: none;
   border-radius: 3px;
@@ -31,6 +32,7 @@ const Button = styled.button`
   flex: 0 1 50%;
   margin: 5px;
   padding: 10px;
+  text-decoration: none;
 `
 
 const Item = styled.div`
@@ -42,9 +44,17 @@ const ItemWrapper = ({ active, children, style }) => (
 )
 
 class PagerItems extends React.Component {
+  static defaultProps = {
+    // width is initially undefined, which sets prevLeft to NaN
+    // Zero puts everything together and expands them
+    // We want something big so everything is off the side
+    width: 2000
+  }
   render() {
     const { children, activeIndex, width } = this.props
+    console.log({ activeIndex, width })
     let prevLeft = -width * activeIndex
+    console.log({ prevLeft })
     const configs = React.Children.toArray(children).map((child, index) => {
       const item = {
         left: spring(prevLeft, springSettings)
@@ -73,48 +83,63 @@ class PagerItems extends React.Component {
   }
 }
 
-class Pager extends React.Component {
-  state = {
-    activeIndex: 0
-  }
-
-  onLeft = () => {
-    this.setState(prevState => ({
-      activeIndex: prevState.activeIndex === 0 ? 0 : prevState.activeIndex - 1
-    }))
-  }
-
-  onRight = () => {
-    this.setState(prevState => ({
-      activeIndex:
-        prevState.activeIndex >= React.Children.count(this.props.children) - 1
-          ? prevState.activeIndex
-          : prevState.activeIndex + 1
-    }))
-  }
-
-  onFirst = () => {
-    this.setState({ activeIndex: 0 })
-  }
-
-  onLast = () => {
-    this.setState({
-      activeIndex: React.Children.count(this.props.children) - 1
+// May need to polyfill findIndex
+const getActiveIndex = (children, location) =>
+  React.Children.toArray(children).findIndex(child =>
+    matchPath(location.pathname, {
+      exact: child.props.exact,
+      path: child.props.path
     })
-  }
+  )
+
+class Pager extends React.Component {
+  // state = {
+  //   activeIndex: 0
+  // }
+  //
+  // onLeft = () => {
+  //   this.setState(prevState => ({
+  //     activeIndex: prevState.activeIndex === 0 ? 0 : prevState.activeIndex - 1
+  //   }))
+  // }
+  //
+  // onRight = () => {
+  //   this.setState(prevState => ({
+  //     activeIndex:
+  //       prevState.activeIndex >= React.Children.count(this.props.children) - 1
+  //         ? prevState.activeIndex
+  //         : prevState.activeIndex + 1
+  //   }))
+  // }
+  //
+  // onFirst = () => {
+  //   this.setState({ activeIndex: 0 })
+  // }
+  //
+  // onLast = () => {
+  //   this.setState({
+  //     activeIndex: React.Children.count(this.props.children) - 1
+  //   })
+  // }
 
   render() {
     const { children, width } = this.props
     return (
       <PagerWrapper>
-        <PagerItems width={width} activeIndex={this.state.activeIndex}>
-          {children}
-        </PagerItems>
+        <Route>
+          {({ location }) => (
+            <PagerItems
+              width={width}
+              activeIndex={getActiveIndex(children, location)}
+            >
+              {children}
+            </PagerItems>
+          )}
+        </Route>
         <ButtonRow>
-          <Button onClick={this.onFirst}>First</Button>
-          <Button onClick={this.onLeft}>Left</Button>
-          <Button onClick={this.onRight}>Right</Button>
-          <Button onClick={this.onLast}>Last</Button>
+          <Button to="/A">A</Button>
+          <Button to="/B">B</Button>
+          <Button to="/C">C</Button>
         </ButtonRow>
       </PagerWrapper>
     )
