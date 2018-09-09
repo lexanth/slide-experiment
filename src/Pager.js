@@ -1,9 +1,8 @@
 import React from 'react'
 import styled from 'styled-components'
-import { Motion, spring } from 'react-motion'
 import matchPath from 'react-router-dom/matchPath'
 import { Route, Link } from 'react-router-dom'
-const springSettings = { stiffness: 170, damping: 26 }
+import { Spring, animated } from 'react-spring'
 
 const ItemsWrapper = styled.div`
   display: flex;
@@ -35,7 +34,7 @@ const Button = styled(Link)`
   text-decoration: none;
 `
 
-const Item = styled.div`
+const Item = styled(animated.div)`
   position: absolute;
 `
 
@@ -52,31 +51,37 @@ class PagerItems extends React.Component {
   }
   render() {
     const { children, activeIndex, width } = this.props
-    console.log({ activeIndex, width })
-    let prevLeft = -width * activeIndex
-    console.log({ prevLeft })
-    const configs = React.Children.toArray(children).map((child, index) => {
-      const item = {
-        left: spring(prevLeft, springSettings)
-      }
-      prevLeft = prevLeft + width
-      return item
-    })
+    const startLeft = -width * activeIndex
+    const lefts = React.Children
+      .toArray(children)
+      .map((child, index) => startLeft + index * width)
+
     return (
       <ItemsWrapper width={width}>
-        {configs.map((style, index) => (
-          <Motion style={configs[index]} key={index}>
-            {style => (
+        {React.Children.map(children, (child, index) => (
+          <Spring
+            from={{
+              x: -2000
+            }}
+            to={{
+              x: lefts[index]
+            }}
+            config={{ duration: 2000 }}
+            // native -
+          >
+            {({ x }) => (
               <ItemWrapper
-                active={style.left > -width && style.left < width}
-                style={style}
+                active={x > -width && x < width}
+                style={{
+                  transform: `translate3d(${x}px,0,0)`
+                }}
               >
-                {React.cloneElement(React.Children.toArray(children)[index], {
+                {React.cloneElement(child, {
                   width
                 })}
               </ItemWrapper>
             )}
-          </Motion>
+          </Spring>
         ))}
       </ItemsWrapper>
     )
